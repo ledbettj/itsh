@@ -3,8 +3,6 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-#define PARSER_MAX_ARGS 512
-
 typedef enum {
   PSTATE_IN_SQUOTE,
   PSTATE_IN_DQUOTE,
@@ -18,10 +16,12 @@ typedef enum {
 #define IN_SPACE(state)  (state == PSTATE_IN_SPACE)
 
 /* TODO: handle escape characters, environmental variables, and ~ paths */
+/* TODO: handle malloc/realloc failure */
 char** parse_args(char* line, int *num_args)
 {
-  char** argv = calloc(sizeof(char*), PARSER_MAX_ARGS);
+  int    argm = 32; /* maximum number of arguments we can currently hold */
   int    argc = 0;
+  char** argv = malloc(sizeof(char*) * argm);
   int    s    = PSTATE_IN_SPACE;
 
   char* next_token = NULL;
@@ -47,16 +47,29 @@ char** parse_args(char* line, int *num_args)
       *p = '\0';
       argv[argc++] = next_token;
       next_token = NULL;
+      if (argc == argm) {
+        argm *= 2;
+        argv = realloc(argv, sizeof(char*) * argm);
+      }
       s = PSTATE_IN_SPACE;
     } else {
       /* nothing to do */
     }
   }
 
-  /* did we have a left over token ? */
+  /* make sure we have room for at least 2 more arguments (trailing + NULL) */
+  if (argc + 2 > argm) {
+    argm = argc + 2;
+    argv = realloc(argv, sizeof(char*) * argm);
+  }
+
+  /* did we have a trailing token? */
   if (next_token) {
     argv[argc++] = next_token;
   }
+
+  /* terminate the array with a NULL pointer for execvp */
+  argv[argc] = NULL;
 
   *num_args = argc;
   return argv;
