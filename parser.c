@@ -8,7 +8,7 @@ typedef enum {
   PSTATE_IN_DQUOTE,
   PSTATE_IN_SIMPLE,
   PSTATE_IN_SPACE
-} PARSER_STATE;
+} PSTATE;
 
 #define IN_SQUOTE(state) (state == PSTATE_IN_SQUOTE)
 #define IN_DQUOTE(state) (state == PSTATE_IN_DQUOTE)
@@ -22,7 +22,7 @@ char** parse_args(char* line, int *num_args)
   int    argm = 32; /* maximum number of arguments we can currently hold */
   int    argc = 0;
   char** argv = malloc(sizeof(char*) * argm);
-  int    s    = PSTATE_IN_SPACE;
+  PSTATE s    = PSTATE_IN_SPACE;
 
   char* next_token = NULL;
 
