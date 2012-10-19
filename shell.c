@@ -1,8 +1,6 @@
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <pwd.h>
@@ -23,6 +21,30 @@ int shell_init(shell_t* sh)
 {
   memset(sh, 0, sizeof(sh));
   shell_prompt_init(&sh->prompt);
+
+  /* wait until we're in the foreground */
+  while(tcgetpgrp(STDIN_FILENO) != (sh->pgid = getpgrp())) {
+    kill(-sh->pgid, SIGTTIN);
+  }
+
+  /* ignore job control signals */
+  signal(SIGINT,  SIG_IGN);
+  signal(SIGQUIT, SIG_IGN);
+  signal(SIGSTOP, SIG_IGN);
+  signal(SIGCHLD, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  signal(SIGTTOU, SIG_IGN);
+
+  /* we need to be in charge of our own process group */
+  sh->pgid = getpid();
+  if (setpgid(sh->pgid, sh->pgid) < 0) {
+    perror("set process group");
+    return -1;
+  }
+
+  tcsetpgrp(STDIN_FILENO, sh->pgid);
+  tcgetattr(STDIN_FILENO, &sh->tmodes);
+
   return 0;
 }
 
@@ -43,7 +65,9 @@ int shell_run(shell_t* sh)
 
 void shell_free(shell_t* sh)
 {
-  /* nothing to do (yet) */
+  /* restore original termios modes */
+  tcsetattr(STDIN_FILENO, 0, &sh->tmodes);
+
   return;
 }
 

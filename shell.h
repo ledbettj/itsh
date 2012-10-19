@@ -1,6 +1,8 @@
 #ifndef _ITSH_SHELL_H_
 #define _ITSH_SHELL_H_
 #include <stdbool.h>
+#include <sys/types.h>
+#include <termios.h>
 
 typedef struct prompt {
   int  uid;
@@ -14,6 +16,8 @@ typedef struct {
   prompt_t prompt;
   int last_exit;
   bool running;
+  pid_t pgid;
+  struct termios tmodes;
 } shell_t;
 
 int  shell_init(shell_t* sh);
