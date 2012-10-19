@@ -35,7 +35,7 @@ void builtin_foreach(int(*on_each)(builtin_t* b)) {
   }
 }
 
-
+/* TODO: handle special case '-' to change to previous directory */
 int builtin_cd(shell_t* sh, int argc, const char** argv)
 {
   if (argc == 2) {

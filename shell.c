@@ -80,6 +80,7 @@ static void shell_prompt_init(prompt_t* p)
            pw ? pw->pw_name : "unknown");
 }
 
+/* TODO: make this not hideous */
 static void shell_prompt_update(prompt_t* p)
 {
   bool special = false;

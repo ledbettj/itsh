@@ -17,6 +17,7 @@ typedef enum {
 #define IN_SIMPLE(state) (state == PSTATE_IN_SIMPLE)
 #define IN_SPACE(state)  (state == PSTATE_IN_SPACE)
 
+/* TODO: handle escape characters, environmental variables, and ~ paths */
 char** parse_args(char* line, int *num_args)
 {
   char** argv = calloc(sizeof(char*), PARSER_MAX_ARGS);
