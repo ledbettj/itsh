@@ -1,7 +1,7 @@
 CC      = gcc
 
 TARGET = itsh
-SRCS   = main.c shell.c parser.c builtin.c
+SRCS   = main.c shell.c parser.c builtin.c process.c job.c
 
 INCLUDEDIRS =
 LIBDIRS     =

@@ -3,7 +3,9 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <termios.h>
+#include "job.h"
 
+/* TODO: clean up this clusterfk */
 typedef struct prompt {
   int  uid;
   char username[32];
@@ -18,6 +20,7 @@ typedef struct {
   bool running;
   pid_t pgid;
   struct termios tmodes;
+  job_t* jobs;
 } shell_t;
 
 int  shell_init(shell_t* sh);
