@@ -154,12 +154,19 @@ static int shell_execute(shell_t* sh, int argc, char** argv)
     perror("fork");
     return -1;
   case 0:
-    /* child */
-    if (execvp(argv[0], argv) == -1) {
-      perror(argv[0]);
-      exit(-1);
-    }
+    /* child process */
+    signal(SIGINT,  SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+    signal(SIGSTOP, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
+    signal(SIGTTOU, SIG_DFL);
+    signal(SIGCHLD, SIG_DFL);
+
+    execvp(argv[0], argv);
+    perror(argv[0]);
+    exit(-1);
   default:
+    /* parent process */
     while((rc = (waitpid(pid, &status, 0)) == -1
            && errno == EINTR)) /* retry */;
     sh->last_exit = WEXITSTATUS(status);
