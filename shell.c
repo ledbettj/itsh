@@ -86,6 +86,11 @@ static int shell_doline(shell_t* sh,char* line)
   int argc = 0;
   char** args = parse_args(line, &argc);
   builtin_t* b;
+
+  if (!argc) {
+    return 0;
+  }
+
   if ((b = builtin_lookup(args[0]))) {
     sh->last_exit = b->callback(sh, argc, (const char**)args);
   } else {
