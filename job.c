@@ -61,7 +61,7 @@ void job_launch(job_t* j)
   for(process_t* p = j->procs; p; p = p->next) {
     /* do we need to pipe our output to another process ? */
     if (p->next) {
-      if (!pipe(job_pipe)) {
+      if (pipe(job_pipe) < 0) {
         perror("pipe");
         exit(1);
       }
