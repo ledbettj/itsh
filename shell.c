@@ -14,10 +14,11 @@
 
 static void  shell_prompt_init  (prompt_t* p);
 static void  shell_prompt_update(prompt_t* p);
-static int   shell_execute      (shell_t* sh, int argc, char** argv);
+static int   shell_execute      (shell_t* sh, process_t* proclist);
 static char* shell_readline     (shell_t* sh);
 static int   shell_doline       (shell_t* sh, char* line);
 static void  shell_job_wait     (shell_t* sh, job_t* j);
+
 int shell_init(shell_t* sh)
 {
   memset(sh, 0, sizeof(sh));
@@ -83,18 +84,18 @@ static int shell_doline(shell_t* sh,char* line)
 {
   add_history(line);
 
-  int argc = 0;
-  char** args = parse_args(line, &argc);
+  process_t* p = parse_line(line);
   builtin_t* b;
 
-  if (!argc) {
+  if (!p->argc) {
     return 0;
   }
 
-  if ((b = builtin_lookup(args[0]))) {
-    sh->last_exit = b->callback(sh, argc, (const char**)args);
+  if ((b = builtin_lookup(p->argv[0]))) {
+    /* TODO: this is broken now with a proc list instead of a single command */
+    sh->last_exit = b->callback(sh, p->argc, (const char**)p->argv);
   } else {
-    shell_execute(sh, argc, args);
+    shell_execute(sh, p);
   }
 
   return 0;
@@ -163,7 +164,7 @@ static void shell_job_to_fg(shell_t* sh, job_t* j)
   tcsetattr(sh->terminal, TCSADRAIN, &sh->tmodes);
 }
 
-static int shell_execute(shell_t* sh, int argc, char** argv)
+static int shell_execute(shell_t* sh, process_t* proclist)
 {
   /* for now, job = process and it's always in the foreground. */
   job_t* j = job_alloc();
@@ -171,11 +172,7 @@ static int shell_execute(shell_t* sh, int argc, char** argv)
   j->stdout = STDOUT_FILENO;
   j->stderr = STDERR_FILENO;
 
-  process_t* p = calloc(1, sizeof(process_t));
-  p->argc = argc;
-  p->argv = argv;
-
-  j->procs = p;
+  j->procs = proclist;
   sh->jobs = j;
 
   job_launch(j);
@@ -183,7 +180,6 @@ static int shell_execute(shell_t* sh, int argc, char** argv)
   shell_job_to_fg(sh, j);
 
   job_free(j);
-  free(p);
   return 0;
 }
 

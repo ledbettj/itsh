@@ -6,6 +6,48 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+process_t* process_alloc(int max_args)
+{
+  process_t* p = calloc(1, sizeof(process_t));
+  p->argm = max_args;
+  p->argv = malloc(p->argm * sizeof(char*));
+}
+
+void process_list_free(process_t* head)
+{
+  process_t* next = NULL, *p = head;
+
+  while(p) {
+    next = p->next;
+    process_free(p);
+    p = next;
+  }
+}
+
+void process_free(process_t* p)
+{
+  for(int i = 0; i < p->argc; ++i) {
+    // not yet!
+    //free(p->argv[i]);
+  }
+  free(p->argv);
+}
+
+void process_push_arg(process_t* p, char* arg)
+{
+  if (p->argc == p->argm) {
+    p->argm *= 2;
+    p->argv = realloc(p->argv, p->argm * sizeof(char*));
+  }
+  p->argv[p->argc++] = arg;
+
+  if (!arg) {
+    /* if we're pushing a trailing NULL don't count it as an arg */
+    p->argc--;
+  }
+}
+
+
 void process_status(process_t* p, int status)
 {
   p->status = status;

@@ -1,7 +1,7 @@
 #ifndef _ITSH_PARSER_H_
 #define _ITSH_PARSER_H_
+#include "process.h"
 
-char** parse_args(char* line, int *num_args);
-void   free_args(char** args);
+process_t* parse_line(char* line);
 
 #endif
