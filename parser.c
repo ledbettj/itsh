@@ -19,6 +19,7 @@ typedef enum {
 process_t* parse_line(char* line) {
   process_t* head = NULL;
   process_t* proc = process_alloc(32);
+  process_t* next;
 
   char* next_token = NULL;
   PSTATE s = PSTATE_IN_SPACE;
@@ -41,7 +42,16 @@ process_t* parse_line(char* line) {
         break;
       case '|':
         /* start of new process */
+        process_push_arg(proc, NULL);
 
+        if (!head) {
+          head = proc;
+        }
+
+        next = process_alloc(32);
+        proc->next = next;
+        proc = next;
+        s = PSTATE_IN_SPACE;
         break;
       default:
         /* start of new simple token */
@@ -56,8 +66,22 @@ process_t* parse_line(char* line) {
       process_push_arg(proc, next_token);
       next_token = NULL;
       s = PSTATE_IN_SPACE;
-    }
+    } else if (IN_SIMPLE(s) && c == '|') {
+      /* also start of a new process, with a trailing token */
+      *p = 0;
+      process_push_arg(proc, next_token);
+      process_push_arg(proc, NULL);
+      next_token = NULL;
 
+      if (!head) {
+        head = proc;
+      }
+
+      next = process_alloc(32);
+      proc->next = next;
+      proc = next;
+      s = PSTATE_IN_SPACE;
+    }
   }
 
   if (next_token) {
