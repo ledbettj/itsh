@@ -16,6 +16,7 @@ typedef struct process {
 
 process_t* process_alloc(int max_args);
 void process_free(process_t* p);
+void process_list_free(process_t* first);
 void process_push_arg(process_t* p, char* arg);
 void process_status(process_t* p, int status);
 void process_launch(process_t* p, pid_t pgid, int in, int out, int err);

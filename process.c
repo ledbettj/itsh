@@ -11,6 +11,8 @@ process_t* process_alloc(int max_args)
   process_t* p = calloc(1, sizeof(process_t));
   p->argm = max_args;
   p->argv = malloc(p->argm * sizeof(char*));
+
+  return p;
 }
 
 void process_list_free(process_t* head)
@@ -31,6 +33,7 @@ void process_free(process_t* p)
     //free(p->argv[i]);
   }
   free(p->argv);
+  free(p);
 }
 
 void process_push_arg(process_t* p, char* arg)

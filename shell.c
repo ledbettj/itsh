@@ -87,16 +87,16 @@ static int shell_doline(shell_t* sh,char* line)
   process_t* p = parse_line(line);
   builtin_t* b;
 
-  if (!p->argc) {
-    return 0;
+  if (p->argc) {
+    if ((b = builtin_lookup(p->argv[0]))) {
+      /* TODO: this is broken now with a proc list instead of a single command */
+      sh->last_exit = b->callback(sh, p->argc, (const char**)p->argv);
+    } else {
+      shell_execute(sh, p);
+    }
   }
 
-  if ((b = builtin_lookup(p->argv[0]))) {
-    /* TODO: this is broken now with a proc list instead of a single command */
-    sh->last_exit = b->callback(sh, p->argc, (const char**)p->argv);
-  } else {
-    shell_execute(sh, p);
-  }
+  process_list_free(p);
 
   return 0;
 }
