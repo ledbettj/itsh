@@ -19,6 +19,9 @@ static char* shell_readline     (shell_t* sh);
 static int   shell_doline       (shell_t* sh, char* line);
 static void  shell_job_wait     (shell_t* sh, job_t* j);
 
+static const char* DEFAULT_PROMPT = "\e[1;31m\\u@\\h:\e[0m\\w\e[0m %> ";
+
+
 int shell_init(shell_t* sh)
 {
   memset(sh, 0, sizeof(sh));
@@ -109,7 +112,7 @@ static void shell_prompt_init(prompt_t* p)
 
   gethostname(p->hostname, sizeof(p->hostname));
 
-  snprintf(p->format,   sizeof(p->format),   "%s", "%u@%h:%w$ ");
+  snprintf(p->format,   sizeof(p->format),   "%s", DEFAULT_PROMPT);
   snprintf(p->username, sizeof(p->username), "%s",
            pw ? pw->pw_name : "unknown");
 }
@@ -125,7 +128,7 @@ static void shell_prompt_update(prompt_t* p)
 
   /* TODO: make sure we don't overflow the value buffer */
   for(char* c = p->format; *c; ++c) {
-    if (*c == '%' && !special) {
+    if (*c == '\\' && !special) {
       special = true;
     } else if (special) {
       switch(*c) {
