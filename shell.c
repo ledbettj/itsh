@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <errno.h>
+#include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "shell.h"
@@ -30,7 +31,7 @@ int shell_init(shell_t* sh)
   /* ignore job control signals */
   signal(SIGINT,  SIG_IGN);
   signal(SIGQUIT, SIG_IGN);
-  signal(SIGSTOP, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
   signal(SIGCHLD, SIG_IGN);
   signal(SIGTTIN, SIG_IGN);
   signal(SIGTTOU, SIG_IGN);

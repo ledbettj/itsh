@@ -21,4 +21,5 @@ bool   job_stopped(job_t* j);
 job_t* job_by_pgid(job_t* head, pid_t pgid);
 job_t* job_alloc(void);
 void   job_free(job_t* j);
+void   job_launch(job_t* j);
 #endif

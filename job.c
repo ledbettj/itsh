@@ -1,5 +1,7 @@
 #include "job.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 
 bool job_completed(job_t* j)
 {
@@ -41,4 +43,48 @@ job_t* job_alloc(void)
 void job_free(job_t* j)
 {
   free(j);
+}
+
+void job_launch(job_t* j)
+{
+  pid_t pid;
+  int job_pipe[2], in, out;
+
+  for(process_t* p = j->procs; p; p = p->next) {
+    /* do we need to pipe our output to another process ? */
+    if (p->next) {
+      pipe(job_pipe);
+      out = job_pipe[1];
+    } else {
+      out = j->stdout;
+    }
+
+    switch((pid = fork())) {
+    case -1:
+      perror("fork");
+      exit(1);
+    case 0:
+      /* parent */
+      p->pid = pid;
+      if (!j->pgid) {
+        j->pgid = pid;
+        setpgid(pid, j->pgid);
+      }
+
+      if (in != j->stdin) {
+        close(in);
+      }
+      if (out != j->stdout) {
+        close(out);
+      }
+      in = job_pipe[0];
+
+      break;
+    default:
+      /* child */
+      process_launch(p, j->pgid, in, out, j->stderr);
+      /* not reached */
+      exit(0);
+    }
+  }
 }
