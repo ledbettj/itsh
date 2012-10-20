@@ -144,33 +144,38 @@ static void shell_prompt_update(prompt_t* p)
   *putat = '\0';
 }
 
+static void shell_job_to_fg(shell_t* sh, job_t* j)
+{
+  /* job to fg */
+  tcsetpgrp(STDIN_FILENO, j->pgid);
+
+  job_wait(j);
+
+  /* shell back to fg */
+  tcsetpgrp(STDIN_FILENO, sh->pgid);
+  tcsetattr(STDIN_FILENO, TCSADRAIN, &sh->tmodes);
+}
+
 
 static int shell_execute(shell_t* sh, int argc, char** argv)
 {
-  pid_t pid;
-  int status = -1, rc;
+  /* for now, job = process and it's always in the foreground. */
+  job_t* j = job_alloc();
+  j->stdin = STDIN_FILENO;
+  j->stdout = STDOUT_FILENO;
+  j->stderr = STDERR_FILENO;
 
-  switch((pid = fork())) {
-  case -1:
-    perror("fork");
-    return -1;
-  case 0:
-    /* child process */
-    signal(SIGINT,  SIG_DFL);
-    signal(SIGQUIT, SIG_DFL);
-    signal(SIGSTOP, SIG_DFL);
-    signal(SIGTTIN, SIG_DFL);
-    signal(SIGTTOU, SIG_DFL);
-    signal(SIGCHLD, SIG_DFL);
+  process_t* p = calloc(1, sizeof(process_t));
+  p->argc = argc;
+  p->argv = argv;
 
-    execvp(argv[0], argv);
-    perror(argv[0]);
-    exit(-1);
-  default:
-    /* parent process */
-    while((rc = (waitpid(pid, &status, 0)) == -1
-           && errno == EINTR)) /* retry */;
-    sh->last_exit = WEXITSTATUS(status);
-    return 0;
-  }
+  j->procs = p;
+
+  job_launch(j);
+
+  shell_job_to_fg(sh, j);
+
+  job_free(j);
+  free(p);
+  return 0;
 }
