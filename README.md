@@ -12,6 +12,7 @@ itsh (it's a shell!) is a simple shell, just for funsies.  Thanks to the execell
 
 ### Things it does do:
 
+* pipes (`ls -l | wc | awk '{print $1 * 1000 + $2 * 100 + $3 * 1}'`)
 * run programs
 * change directories
 
