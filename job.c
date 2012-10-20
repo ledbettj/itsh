@@ -101,12 +101,3 @@ void job_launch(job_t* j)
     in = job_pipe[0];
   }
 }
-
-
-void job_wait(job_t* j)
-{
-  int status = -1;
-  /* TODO: actually wait for all this specific job / procs */
-  waitpid(j->procs->pid, &status, 0);
-}
-

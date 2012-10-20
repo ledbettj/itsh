@@ -4,41 +4,65 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
+
+void process_status(process_t* p, int status)
+{
+  p->status = status;
+  if (WIFSTOPPED(status)) {
+    p->stopped = true;
+  } else {
+    p->completed = true;
+    if (WIFSIGNALED(status)) {
+      /* it were a bloody death */
+    }
+  }
+}
+
+process_t* process_by_pid(process_t* first, pid_t pid)
+{
+  for(process_t* p = first; p; p = p->next) {
+    if (p->pid == pid) {
+      return p;
+    }
+  }
+  return NULL;
+}
 
 void process_launch(process_t* p, pid_t pgid, int in, int out, int err)
 {
-  pid_t pid;
+  pid_t pid = getpid();
 
-  pid = getpid ();
-  if (pgid == 0) pgid = pid;
-  setpgid (pid, pgid);
+  pgid = pgid ? pgid : pid;
 
-  tcsetpgrp (STDIN_FILENO, pgid);
+  setpgid(pid, pgid);
+
+  tcsetpgrp(STDIN_FILENO, pgid);
 
   /* unblock job control signals */
-  signal (SIGINT, SIG_DFL);
-  signal (SIGQUIT, SIG_DFL);
-  signal (SIGTSTP, SIG_DFL);
-  signal (SIGTTIN, SIG_DFL);
-  signal (SIGTTOU, SIG_DFL);
-  signal (SIGCHLD, SIG_DFL);
+  signal(SIGINT, SIG_DFL);
+  signal(SIGQUIT, SIG_DFL);
+  signal(SIGTSTP, SIG_DFL);
+  signal(SIGTTIN, SIG_DFL);
+  signal(SIGTTOU, SIG_DFL);
+  signal(SIGCHLD, SIG_DFL);
 
   if (in != STDIN_FILENO) {
-    dup2 (in, STDIN_FILENO);
-    close (in);
+    dup2(in, STDIN_FILENO);
+    close(in);
   }
 
   if (out != STDOUT_FILENO) {
-    dup2 (out, STDOUT_FILENO);
-    close (out);
+    dup2(out, STDOUT_FILENO);
+    close(out);
   }
 
   if (err != STDERR_FILENO) {
-    dup2 (err, STDERR_FILENO);
-    close (err);
+    dup2(err, STDERR_FILENO);
+    close(err);
   }
 
-  execvp (p->argv[0], p->argv);
-  perror (p->argv[0]);
+  execvp(p->argv[0], p->argv);
+  perror(p->argv[0]);
   exit (1);
 }

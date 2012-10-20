@@ -19,6 +19,7 @@ typedef struct {
   int last_exit;
   bool running;
   pid_t pgid;
+  int   terminal;
   struct termios tmodes;
   job_t* jobs;
 } shell_t;

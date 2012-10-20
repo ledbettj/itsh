@@ -17,14 +17,15 @@ static void  shell_prompt_update(prompt_t* p);
 static int   shell_execute      (shell_t* sh, int argc, char** argv);
 static char* shell_readline     (shell_t* sh);
 static int   shell_doline       (shell_t* sh, char* line);
-
+static void  shell_job_wait     (shell_t* sh, job_t* j);
 int shell_init(shell_t* sh)
 {
   memset(sh, 0, sizeof(sh));
   shell_prompt_init(&sh->prompt);
+  sh->terminal = STDIN_FILENO;
 
   /* wait until we're in the foreground */
-  while(tcgetpgrp(STDIN_FILENO) != (sh->pgid = getpgrp())) {
+  while(tcgetpgrp(sh->terminal) != (sh->pgid = getpgrp())) {
     kill(-sh->pgid, SIGTTIN);
   }
 
@@ -43,8 +44,8 @@ int shell_init(shell_t* sh)
     return -1;
   }
 
-  tcsetpgrp(STDIN_FILENO, sh->pgid);
-  tcgetattr(STDIN_FILENO, &sh->tmodes);
+  tcsetpgrp(sh->terminal, sh->pgid);
+  tcgetattr(sh->terminal, &sh->tmodes);
 
   return 0;
 }
@@ -67,7 +68,7 @@ int shell_run(shell_t* sh)
 void shell_free(shell_t* sh)
 {
   /* restore original termios modes */
-  tcsetattr(STDIN_FILENO, 0, &sh->tmodes);
+  tcsetattr(sh->terminal, 0, &sh->tmodes);
 
   return;
 }
@@ -147,21 +148,22 @@ static void shell_prompt_update(prompt_t* p)
 static void shell_job_to_fg(shell_t* sh, job_t* j)
 {
   /* job to fg */
-  tcsetpgrp(STDIN_FILENO, j->pgid);
+  tcsetpgrp(sh->terminal, j->pgid);
 
-  job_wait(j);
+  shell_job_wait(sh, j);
 
   /* shell back to fg */
-  tcsetpgrp(STDIN_FILENO, sh->pgid);
-  tcsetattr(STDIN_FILENO, TCSADRAIN, &sh->tmodes);
-}
+  tcsetpgrp(sh->terminal, sh->pgid);
 
+  tcgetattr(sh->terminal, &j->tmodes);
+  tcsetattr(sh->terminal, TCSADRAIN, &sh->tmodes);
+}
 
 static int shell_execute(shell_t* sh, int argc, char** argv)
 {
   /* for now, job = process and it's always in the foreground. */
   job_t* j = job_alloc();
-  j->stdin = STDIN_FILENO;
+  j->stdin  = STDIN_FILENO;
   j->stdout = STDOUT_FILENO;
   j->stderr = STDERR_FILENO;
 
@@ -170,6 +172,7 @@ static int shell_execute(shell_t* sh, int argc, char** argv)
   p->argv = argv;
 
   j->procs = p;
+  sh->jobs = j;
 
   job_launch(j);
 
@@ -178,4 +181,24 @@ static int shell_execute(shell_t* sh, int argc, char** argv)
   job_free(j);
   free(p);
   return 0;
+}
+
+void shell_job_wait(shell_t* sh, job_t* j)
+{
+  pid_t pid;
+  int status;
+  process_t* p;
+
+  while(!job_stopped(j) && !job_completed(j)) {
+    if ((pid = waitpid(WAIT_ANY, &status, WUNTRACED)) > 0) {
+      for(job_t* iter = sh->jobs; iter; iter = iter->next) {
+        if ((p = process_by_pid(iter->procs, pid))) {
+          process_status(p, status);
+        }
+      }
+    } else if (errno != ECHILD && pid != 0) {
+      perror("waitpid");
+    }
+  }
+
 }
