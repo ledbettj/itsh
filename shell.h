@@ -4,15 +4,7 @@
 #include <sys/types.h>
 #include <termios.h>
 #include "job.h"
-
-/* TODO: clean up this clusterfk */
-typedef struct prompt {
-  int  uid;
-  char username[32];
-  char hostname[32];
-  char format[32];
-  char value[512];
-} prompt_t;
+#include "prompt.h"
 
 typedef struct {
   prompt_t prompt;

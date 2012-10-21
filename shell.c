@@ -3,7 +3,6 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <pwd.h>
 #include <errno.h>
 #include <signal.h>
 #include <readline/readline.h>
@@ -12,20 +11,15 @@
 #include "parser.h"
 #include "builtin.h"
 
-static void  shell_prompt_init  (prompt_t* p);
-static void  shell_prompt_update(prompt_t* p);
 static int   shell_execute      (shell_t* sh, process_t* proclist);
 static char* shell_readline     (shell_t* sh);
 static int   shell_doline       (shell_t* sh, char* line);
 static void  shell_job_wait     (shell_t* sh, job_t* j);
 
-static const char* DEFAULT_PROMPT = "\e[1;31m\\u@\\h:\e[0m\\w\e[0m %> ";
-
-
 int shell_init(shell_t* sh)
 {
   memset(sh, 0, sizeof(sh));
-  shell_prompt_init(&sh->prompt);
+  prompt_init(&sh->prompt);
   sh->terminal = STDIN_FILENO;
 
   /* wait until we're in the foreground */
@@ -72,13 +66,13 @@ void shell_free(shell_t* sh)
 {
   /* restore original termios modes */
   tcsetattr(sh->terminal, 0, &sh->tmodes);
-
+  prompt_free(&sh->prompt);
   return;
 }
 
 static char* shell_readline(shell_t* sh)
 {
-  shell_prompt_update(&sh->prompt);
+  prompt_update(&sh->prompt);
   return readline(sh->prompt.value);
 }
 
@@ -102,55 +96,6 @@ static int shell_doline(shell_t* sh,char* line)
   process_list_free(p);
 
   return 0;
-}
-
-static void shell_prompt_init(prompt_t* p)
-{
-  p->uid = getuid();
-
-  struct passwd* pw = getpwuid(p->uid);
-
-  gethostname(p->hostname, sizeof(p->hostname));
-
-  snprintf(p->format,   sizeof(p->format),   "%s", DEFAULT_PROMPT);
-  snprintf(p->username, sizeof(p->username), "%s",
-           pw ? pw->pw_name : "unknown");
-}
-
-/* TODO: make this not hideous */
-static void shell_prompt_update(prompt_t* p)
-{
-  bool special = false;
-  char* putat = p->value;
-  char cwdbuf[512];
-
-  getcwd(cwdbuf, sizeof(cwdbuf));
-
-  /* TODO: make sure we don't overflow the value buffer */
-  for(char* c = p->format; *c; ++c) {
-    if (*c == '\\' && !special) {
-      special = true;
-    } else if (special) {
-      switch(*c) {
-      case 'h':
-        putat += sprintf(putat, "%s", p->hostname);
-        break;
-      case 'u':
-        putat += sprintf(putat, "%s", p->username);
-        break;
-      case 'w':
-        putat += sprintf(putat, "%s", cwdbuf);
-        break;
-      default:
-        *(putat++) = *c;
-        break;
-      }
-      special = false;
-    } else {
-      *(putat++) = *c;
-    }
-  }
-  *putat = '\0';
 }
 
 static void shell_job_to_fg(shell_t* sh, job_t* j)
