@@ -110,7 +110,7 @@ void process_launch(process_t* p, pid_t pgid, int in, int out, int err)
 
   builtin_t* b;
 
-  if ((b = builtin_lookup(p->argv[0], BFLAG_INCHILD))) {
+  if ((b = builtin_lookup(p->argv[0], BFLAG_INCHILD | BFLAG_ENABLED))) {
     exit(b->callback(NULL, p->argc, (const char**)p->argv));
   } else {
     execvp(p->argv[0], p->argv);

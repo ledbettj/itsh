@@ -14,6 +14,7 @@ typedef struct {
 #define BFLAG_NONE     (0)
 #define BFLAG_INPARENT (1 << 0) /* cannot be run in a child process */
 #define BFLAG_INCHILD  (1 << 1) /* should be run in a child process */
+#define BFLAG_ENABLED  (1 << 8) /* is it turned on ? */
 
 builtin_t* builtin_lookup(const char* cmd, uint16_t mask);
 void builtin_foreach(int(*on_each)(builtin_t* b));

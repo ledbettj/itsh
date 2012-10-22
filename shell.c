@@ -86,7 +86,7 @@ static int shell_doline(shell_t* sh,char* line)
 
   if (p->argc) {
     /* single command; test for builtin */
-    if (!p->next && (b = builtin_lookup(p->argv[0], BFLAG_INPARENT))) {
+    if (!p->next && (b = builtin_lookup(p->argv[0], BFLAG_INPARENT | BFLAG_ENABLED))) {
       sh->last_exit = b->callback(sh, p->argc, (const char**)p->argv);
     } else {
       shell_execute(sh, p);
