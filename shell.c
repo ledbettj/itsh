@@ -116,9 +116,9 @@ static int shell_execute(shell_t* sh, process_t* proclist)
 {
   /* for now, job = process and it's always in the foreground. */
   job_t* j = job_alloc();
-  j->stdin  = STDIN_FILENO;
-  j->stdout = STDOUT_FILENO;
-  j->stderr = STDERR_FILENO;
+  j->in  = STDIN_FILENO;
+  j->out = STDOUT_FILENO;
+  j->err = STDERR_FILENO;
 
   j->procs = proclist;
   sh->jobs = j;

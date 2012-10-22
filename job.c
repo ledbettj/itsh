@@ -39,9 +39,9 @@ job_t* job_from_pgid(job_t* head, pid_t pgid)
 job_t* job_alloc(void)
 {
   job_t* j = calloc(1, sizeof(job_t));
-  j->stdin = STDIN_FILENO;
-  j->stdout = STDOUT_FILENO;
-  j->stderr = STDERR_FILENO;
+  j->in = STDIN_FILENO;
+  j->out = STDOUT_FILENO;
+  j->err = STDERR_FILENO;
 
   return j;
 }
@@ -55,8 +55,8 @@ void job_launch(job_t* j)
 {
   pid_t pid;
   int job_pipe[2];
-  int in = j->stdin;
-  int out = j->stdout;
+  int in = j->in;
+  int out = j->out;
 
   for(process_t* p = j->procs; p; p = p->next) {
     /* do we need to pipe our output to another process ? */
@@ -67,7 +67,7 @@ void job_launch(job_t* j)
       }
       out = job_pipe[1];
     } else {
-      out = j->stdout;
+      out = j->out;
     }
 
     switch((pid = fork())) {
@@ -76,7 +76,7 @@ void job_launch(job_t* j)
       exit(1);
     case 0:
       /* child */
-      process_launch(p, j->pgid, in, out, j->stderr);
+      process_launch(p, j->pgid, in, out, j->err);
       /* not reached */
       exit(0);
     default:
@@ -92,10 +92,10 @@ void job_launch(job_t* j)
       break;
     }
 
-    if (in != j->stdin) {
+    if (in != j->in) {
       close(in);
     }
-    if (out != j->stdout) {
+    if (out != j->out) {
       close(out);
     }
     in = job_pipe[0];

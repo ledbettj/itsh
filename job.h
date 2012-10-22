@@ -11,9 +11,9 @@ typedef struct job {
   pid_t pgid;
   bool notified;
   struct termios tmodes;
-  int stdin;
-  int stdout;
-  int stderr;
+  int in;
+  int out;
+  int err;
 } job_t;
 
 bool   job_completed(job_t* j);
