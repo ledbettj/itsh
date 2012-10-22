@@ -82,11 +82,11 @@ static int shell_doline(shell_t* sh,char* line)
   add_history(line);
 
   process_t* p = parse_line(line);
-  builtin_t* b;
+  builtin_t* b = NULL;
 
   if (p->argc) {
-    if ((b = builtin_lookup(p->argv[0]))) {
-      /* TODO: this is broken now with a proc list instead of a single command */
+    /* single command; test for builtin */
+    if (!p->next && (b = builtin_lookup(p->argv[0], BFLAG_INPARENT))) {
       sh->last_exit = b->callback(sh, p->argc, (const char**)p->argv);
     } else {
       shell_execute(sh, p);

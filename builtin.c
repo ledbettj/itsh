@@ -10,17 +10,19 @@ int builtin_exit(shell_t* sh, int argc, const char** argv);
 int builtin_help(shell_t* sh, int argc, const char** argv);
 
 static builtin_t builtins[] = {
-  {"cd",   "<path>",    builtin_cd},
-  {"exit", "(value)",   builtin_exit},
-  {"help", "(command)", builtin_help},
-  {NULL, NULL, NULL}
+  {"cd",   "<path>",    BFLAG_INPARENT, builtin_cd},
+  {"exit", "(value)",   BFLAG_INPARENT, builtin_exit},
+  {"help", "(command)", BFLAG_INCHILD,  builtin_help},
+  {NULL,   NULL,        BFLAG_NONE,     NULL}
 };
 
-builtin_t* builtin_lookup(const char* cmd)
+builtin_t* builtin_lookup(const char* cmd, uint16_t mask)
 {
+  builtin_t* b;
   for(int i = 0; builtins[i].command != NULL; ++i) {
-    if (!strcmp(builtins[i].command, cmd)) {
-      return &builtins[i];
+    b = &builtins[i];
+    if (((b->flags & mask) == mask) && !strcmp(b->command, cmd)) {
+      return b;
     }
   }
 
@@ -71,7 +73,7 @@ static int help_helper(builtin_t* b)
 int builtin_help(shell_t* sh, int argc, const char* argv[])
 {
   if (argc == 2) {
-    builtin_t* b = builtin_lookup(argv[1]);
+    builtin_t* b = builtin_lookup(argv[1], BFLAG_NONE);
     if (!b) {
       printf("no such command '%s'\n", argv[1]);
     } else {

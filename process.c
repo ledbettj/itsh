@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include "builtin.h"
 
 process_t* process_alloc(int max_args)
 {
@@ -107,7 +108,13 @@ void process_launch(process_t* p, pid_t pgid, int in, int out, int err)
     close(err);
   }
 
-  execvp(p->argv[0], p->argv);
-  perror(p->argv[0]);
-  exit (1);
+  builtin_t* b;
+
+  if ((b = builtin_lookup(p->argv[0], BFLAG_INCHILD))) {
+    exit(b->callback(NULL, p->argc, (const char**)p->argv));
+  } else {
+    execvp(p->argv[0], p->argv);
+    perror(p->argv[0]);
+    exit (1);
+  }
 }
