@@ -21,6 +21,9 @@ static builtin_t builtins[] = {
   {NULL, NULL, BFLAG_NONE, NULL}
 };
 
+static int ls_internal(const char* path, const char* pad);
+
+
 builtin_t* builtin_lookup(const char* cmd, uint16_t mask)
 {
   builtin_t* b;
@@ -95,7 +98,20 @@ int builtin_help(shell_t* sh, int argc, const char* argv[])
 
 int builtin_ls(shell_t* sh, int argc, const char** argv)
 {
-  const char* path = (argc == 2 ? argv[1] : ".");
+  if (argc == 1) {
+    return ls_internal(".", "");
+  } else {
+    for(int i = 1; i < argc; ++i) {
+      printf("%s:\n", argv[i]);
+      ls_internal(argv[i], "  ");
+      printf("\n");
+    }
+    return 0;
+  }
+}
+
+static int ls_internal(const char* path, const char* pad)
+{
   DIR* d;
   struct dirent* ent;
 
@@ -105,7 +121,7 @@ int builtin_ls(shell_t* sh, int argc, const char** argv)
         continue;
       }
 
-      printf("%s\n", ent->d_name);
+      printf("%s%s\n", pad, ent->d_name);
     }
     closedir(d);
   } else {
