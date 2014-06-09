@@ -18,7 +18,7 @@ static void  shell_job_wait     (shell_t* sh, job_t* j);
 
 int shell_init(shell_t* sh)
 {
-  memset(sh, 0, sizeof(sh));
+  memset(sh, 0, sizeof(*sh));
   prompt_init(&sh->prompt);
   sh->terminal = STDIN_FILENO;
 
